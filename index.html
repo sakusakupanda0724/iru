@@ -1,0 +1,255 @@
+<!DOCTYPE html>
+<html lang="ja">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0">
+<title>emotion mixer</title>
+
+<style>
+:root {
+  --bg: #f6f6f6;
+  --panel: #ffffff;
+  --line: #e8e8e8;
+  --text: #666;
+}
+
+body {
+  margin: 0;
+  background: var(--bg);
+  font-family: system-ui, -apple-system, sans-serif;
+  height: 100vh;
+  overflow: hidden;
+  color: var(--text);
+}
+
+/* ---------- header ---------- */
+h1 {
+  font-size: 18px;
+  font-weight: 400;
+  text-align: center;
+  margin: 10px 0 6px;
+  letter-spacing: 0.04em;
+}
+
+/* ---------- controls ---------- */
+.panel {
+  display: grid;
+  grid-template-columns: 1fr 1fr 1fr 1fr;
+  gap: 6px 10px;
+  padding: 6px 12px 4px;
+}
+
+.emotion {
+  background: rgb(200, 239, 255);
+  border: 1px solid rgb(255, 255, 255);
+  border-radius: 10px;
+  padding: 6px 8px 8px;
+}
+
+.emotion label {
+  display: block;
+  font-size: 15px;
+  margin-bottom: 2px;
+  letter-spacing: 0.05em;
+}
+
+.emotion input[type="range"] {
+  width: 100%;
+  height: 14px;
+  accent-color: #bbb;
+}
+
+/* ---------- button ---------- */
+button {
+  margin: 6px auto 1px;
+  display: block;
+  padding: 6px 18px;
+  border-radius: 999px;
+  border: 1px solid var(--line);
+  background: transparent;
+  font-size: 16px;
+  letter-spacing: 0.08em;
+  cursor: pointer;
+}
+
+button:hover {
+  background: #eee;
+}
+
+/* ---------- space ---------- */
+.space {
+  position: absolute;
+  bottom: 0;
+  left: 0;
+  width: 100vw;
+  height: 55vh;
+  background: #fafafa;
+  overflow: hidden;
+}
+
+/* ---------- forms ---------- */
+.form {
+  position: absolute;
+  mix-blend-mode: multiply;
+  opacity: 0.55;
+  pointer-events: none;
+  transition: filter 2s ease;
+}
+
+.form::after {
+  content: "";
+  position: absolute;
+  inset: 0;
+  background-image:
+    radial-gradient(
+      rgba(255,255,255,0.06) 1px,
+      transparent 1px
+    );
+  background-size: 3px 3px;
+  mix-blend-mode: overlay;
+}
+</style>
+</head>
+
+<body>
+
+<h1>いまの気持ちをまぜて、放す</h1>
+
+<div class="panel" id="panel"></div>
+<button onclick="release()">release</button>
+
+<div class="space" id="space"></div>
+
+<script>
+// ---------------------
+// emotion definitions
+// ---------------------
+const emotions = {
+  ぼんやり: { color: [180,200,220], size: 240 },
+  ざわざわ: { color: [220,150,150], size: 140 },
+  しずか:   { color: [200,220,200], size: 260 },
+  ぬくい:   { color: [240,210,160], size: 280 },
+  うれしい: { color: [255,220,120], size: 180 },
+  かなしい: { color: [160,180,220], size: 220 },
+  つかれた: { color: [180,180,180], size: 260 },
+  きたい:   { color: [180,240,220], size: 200 }
+};
+
+// ---------------------
+// UI
+// ---------------------
+const panel = document.getElementById('panel');
+Object.keys(emotions).forEach(name => {
+  panel.insertAdjacentHTML('beforeend', `
+    <div class="emotion">
+      <label>${name}</label>
+      <input type="range" min="0" max="100" value="0" data-name="${name}">
+    </div>
+  `);
+});
+
+const forms = [];
+let running = false;
+
+// ---------------------
+// release
+// ---------------------
+function release() {
+  const sliders = document.querySelectorAll('input[type="range"]');
+  const active = [...sliders].filter(s => s.value > 0);
+  if (!active.length) return;
+
+  let total = 0, r = 0, g = 0, b = 0, size = 0;
+
+  active.forEach(s => {
+    const w = s.value / 100;
+    const e = emotions[s.dataset.name];
+    total += w;
+    r += e.color[0] * w;
+    g += e.color[1] * w;
+    b += e.color[2] * w;
+    size += e.size * w;
+    s.value = 0;
+  });
+
+  r /= total; g /= total; b /= total; size /= total;
+
+  const el = document.createElement('div');
+  el.className = 'form';
+  el.style.width = size + 'px';
+  el.style.height = size + 'px';
+  el.style.borderRadius = '60%';
+
+  document.getElementById('space').appendChild(el);
+
+  forms.push({
+    el,
+    x: Math.random() * window.innerWidth,
+    y: Math.random() * window.innerHeight * 0.4,
+    vx: (Math.random() - 0.5) * 0.15,
+    vy: (Math.random() - 0.5) * 0.15,
+    phase: Math.random() * Math.PI * 2,
+    life: 1,
+    blur: 5,
+    color: { r, g, b }
+  });
+
+  if (!running) loop();
+}
+
+// ---------------------
+// loop
+// ---------------------
+function loop() {
+  running = true;
+
+  forms.forEach(f => {
+    f.phase += 0.008;
+    f.x += f.vx + Math.cos(f.phase) * 0.04;
+    f.y += f.vy + Math.sin(f.phase * 0.9) * 0.04;
+
+    f.life -= 0.00001;
+    f.blur *= 0.999;
+
+    f.el.style.transform = `translate(${f.x}px, ${f.y}px)`;
+    f.el.style.opacity = Math.max(f.life, 0);
+  });
+
+  // blend
+  for (let i = 0; i < forms.length; i++) {
+    for (let j = i + 1; j < forms.length; j++) {
+      const a = forms[i];
+      const b = forms[j];
+      const d = Math.hypot(a.x - b.x, a.y - b.y);
+
+      if (d < 120) {
+        const mix = 0.012;
+        a.color.r += (b.color.r - a.color.r) * mix;
+        a.color.g += (b.color.g - a.color.g) * mix;
+        a.color.b += (b.color.b - a.color.b) * mix;
+        b.color.r += (a.color.r - b.color.r) * mix;
+        b.color.g += (a.color.g - b.color.g) * mix;
+        b.color.b += (a.color.b - b.color.b) * mix;
+        a.blur = Math.min(a.blur + 0.06, 14);
+        b.blur = Math.min(b.blur + 0.06, 14);
+      }
+    }
+  }
+
+  forms.forEach(f => {
+    f.el.style.background =
+      `radial-gradient(circle at ${45 + Math.sin(f.phase)*8}% ${45 + Math.cos(f.phase)*8}%,
+        rgba(${f.color.r},${f.color.g},${f.color.b},0.55),
+        rgba(${f.color.r},${f.color.g},${f.color.b},0.12))`;
+
+    f.el.style.filter = `blur(${f.blur}px)`;
+    f.el.style.borderRadius =
+      `${55 + Math.sin(f.phase) * 10}%`;
+  });
+
+  requestAnimationFrame(loop);
+}
+</script>
+
+</body>
+</html>
