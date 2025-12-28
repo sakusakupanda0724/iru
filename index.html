@@ -34,14 +34,13 @@ h1 {
 
 /* ---------- controls ---------- */
 .panel {
-  width: 92%;
+　width: 92%;
   max-width: 420px;
   display: grid;
   grid-template-columns: 1fr 1fr;
-  gap: 6px 10px;
-  margin-bottom: 6px;
-  font-size: 5px;
-  color: #666;
+  gap: 4px 8px;          /* ← 間隔を詰める */
+  margin-bottom: 4px;   /* ← spaceとの距離を縮める */
+  font-size: 10px; 
 }
 
 .emotion {
@@ -51,11 +50,10 @@ h1 {
   padding: 6px 8px 8px;
 }
 
-.emotion label {
-  display: block;
-  font-size: 8px;
-  margin-bottom: 2px;
-  letter-spacing: 0.05em;
+.emotion-label {
+  font-size: 10px;   /* 11〜12px → 10px */
+  line-height: 1.2;
+  color: #777;
 }
 
 .emotion input[type="range"] {
@@ -87,7 +85,7 @@ button:hover {
   bottom: 0;
   left: 0;
   width: 100vw;
-  height: 60vh;
+  height:　58vh;
   background: #fafafa;
   border-radius: 20px 20px 0 0;
   overflow: hidden;
@@ -259,6 +257,7 @@ function loop() {
 
 </body>
 </html>
+
 
 
 
